@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FocusLock">
+<meta name="description" content="Social media time tracker and blocker">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>FocusLock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --surface3: #22223a;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43e97b;
+    --amber: #ffa94d;
+    --text: #f0f0ff;
+    --muted: #7878aa;
+    --border: rgba(255,255,255,0.07);
+    --danger: #ff4757;
+    --warning: #ffa94d;
+    --success: #43e97b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* INSTALL BANNER */
+  .install-banner {
+    background: linear-gradient(135deg, rgba(108,99,255,0.2), rgba(255,101,132,0.12));
+    border-bottom: 1px solid rgba(108,99,255,0.25);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  .install-banner.hidden { display: none; }
+
+  .install-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .install-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 2px;
+    flex-shrink: 0;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    padding: 16px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .logo-dot {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .streak-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,169,77,0.12);
+    border: 1px solid rgba(255,169,77,0.25);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--amber);
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    padding: 10px 20px 0;
+    gap: 4px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 8px 4px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  /* MAIN CONTENT */
+  .content {
+    flex: 1;
+    padding: 18px 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 32px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  /* DAILY CARD */
+  .daily-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .daily-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .ring-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .ring-wrap {
+    position: relative;
+    width: 68px;
+    height: 68px;
+    flex-shrink: 0;
+  }
+
+  .ring-wrap svg { transform: rotate(-90deg); }
+
+  .ring-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .ring-label small {
+    font-size: 8px;
+    font-weight: 400;
+    color: var(--muted);
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  .daily-time {
+    font-size: 34px;
+    font-weight: 700;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: -2px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .daily-time span { font-size: 15px; font-weight: 400; color: var(--muted); letter-spacing: 0; }
+  .daily-meta { font-size: 12px; color: var(--muted); }
+  .daily-meta strong { color: var(--text); }
+
+  /* CHART */
+  .chart-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    height: 72px;
+    margin-bottom: 5px;
+  }
+
+  .bar-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+
+  .bar { width: 100%; border-radius: 3px 3px 0 0; min-height: 3px; }
+  .bar-day { font-size: 9px; color: var(--muted); }
+
+  /* APP CARDS */
+  .app-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 13px 14px;
+    margin-bottom: 9px;
+    transition: border-color 0.2s;
+  }
+
+  .app-card.locked { border-color: rgba(255,71,87,0.3); background: rgba(255,71,87,0.04); }
+
+  .app-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 9px;
+  }
+
+  .app-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+
+  .app-info { flex: 1; min-width: 0; }
+
+  .app-name {
+    font-size: 14px; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+    white-space: nowrap; overflow: hidden;
+  }
+
+  .lock-pill {
+    font-size: 9px;
+    background: rgba(255,71,87,0.15);
+    color: var(--danger);
+    border: 1px solid rgba(255,71,87,0.3);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+
+  .app-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  .app-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px; font-weight: 500; text-align: right;
+  }
+
+  .app-time .limit { font-size: 10px; color: var(--muted); font-family: 'Space Grotesk', sans-serif; }
+
+  .progress-track { width: 100%; height: 4px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+
+  .status-row { display: flex; align-items: center; justify-content: space-between; margin-top: 7px; }
+
+  .status-tag {
+    font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 600; letter-spacing: 0.3px;
+  }
+
+  .tag-ok { background: rgba(67,233,123,0.12); color: var(--success); }
+  .tag-warn { background: rgba(255,169,77,0.12); color: var(--amber); }
+  .tag-locked { background: rgba(255,71,87,0.12); color: var(--danger); }
+
+  /* INSIGHT */
+  .insight-card {
+    background: linear-gradient(135deg, rgba(108,99,255,0.1), rgba(255,101,132,0.06));
+    border: 1px solid rgba(108,99,255,0.18);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .insight-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .insight-text { font-size: 13px; line-height: 1.6; color: rgba(240,240,255,0.85); }
+  .insight-text strong { color: var(--text); }
+
+  /* BUTTONS */
+  .btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px; font-weight: 500;
+    padding: 7px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn:active { transform: scale(0.96); }
+  .btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-danger { background: rgba(255,71,87,0.12); border-color: rgba(255,71,87,0.3); color: var(--danger); }
+  .btn-full { width: 100%; text-align: center; padding: 12px; border-radius: 12px; font-size: 14px; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 14px; }
+
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px;
+  }
+
+  .stat-value {
+    font-size: 22px; font-weight: 700;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: -1px; line-height: 1; margin-bottom: 4px;
+  }
+
+  .stat-label { font-size: 11px; color: var(--muted); }
+
+  /* SETTINGS */
+  .setting-row {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 13px 14px;
+    margin-bottom: 8px; display: flex; align-items: center; gap: 12px;
+  }
+
+  .setting-info { flex: 1; }
+  .setting-label { font-size: 14px; font-weight: 500; }
+  .setting-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .toggle-wrap { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+
+  .toggle-wrap input {
+    opacity: 0; position: absolute; inset: 0; cursor: pointer;
+    z-index: 2; width: 100%; height: 100%; margin: 0;
+  }
+
+  .toggle-track {
+    position: absolute; inset: 0;
+    background: var(--surface3); border-radius: 11px;
+    transition: background 0.2s; border: 1px solid var(--border);
+  }
+
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    background: var(--muted); border-radius: 50%;
+    transition: transform 0.2s, background 0.2s; pointer-events: none;
+  }
+
+  .toggle-wrap input:checked ~ .toggle-track { background: rgba(108,99,255,0.3); border-color: var(--accent); }
+  .toggle-wrap input:checked ~ .toggle-thumb { transform: translateX(16px); background: var(--accent); }
+
+  .limit-editor { display: flex; align-items: center; gap: 6px; }
+
+  .limit-input {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'DM Mono', monospace;
+    font-size: 13px; font-weight: 500;
+    padding: 4px 6px; border-radius: 6px;
+    width: 46px; text-align: center;
+  }
+
+  .limit-input:focus { outline: none; border-color: var(--accent); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,10,15,0.95);
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid rgba(255,71,87,0.25);
+    border-radius: 24px; padding: 26px 22px;
+    max-width: 340px; width: 100%; text-align: center;
+  }
+
+  .lock-icon {
+    width: 60px; height: 60px;
+    background: rgba(255,71,87,0.1);
+    border: 1px solid rgba(255,71,87,0.25);
+    border-radius: 18px;
+    margin: 0 auto 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+  }
+
+  .modal h2 { font-size: 19px; font-weight: 700; margin-bottom: 8px; }
+  .modal p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+
+  .breath-card {
+    background: rgba(108,99,255,0.08);
+    border: 1px solid rgba(108,99,255,0.2);
+    border-radius: 10px; padding: 10px 13px;
+    margin-bottom: 12px; text-align: left;
+  }
+
+  .breath-title { font-size: 10px; font-weight: 700; color: var(--accent); margin-bottom: 3px; letter-spacing: 0.8px; }
+  .breath-text { font-size: 12px; color: rgba(240,240,255,0.85); line-height: 1.5; }
+
+  .emergency-note {
+    background: rgba(255,169,77,0.08);
+    border: 1px solid rgba(255,169,77,0.2);
+    border-radius: 10px; padding: 9px 13px;
+    font-size: 12px; color: var(--amber);
+    margin-bottom: 14px; text-align: left;
+  }
+
+  /* PIN */
+  .pin-row { display: flex; gap: 9px; justify-content: center; margin-bottom: 14px; }
+
+  .pin-dot {
+    width: 44px; height: 46px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-family: 'DM Mono', monospace; color: var(--accent);
+    transition: all 0.15s;
+  }
+
+  .pin-dot.filled { border-color: var(--accent); background: rgba(108,99,255,0.1); }
+
+  .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-bottom: 7px; }
+
+  .pin-key {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 13px;
+    font-size: 18px; font-weight: 600; color: var(--text);
+    cursor: pointer; text-align: center;
+    font-family: 'DM Mono', monospace;
+    transition: all 0.1s; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .pin-key:active { transform: scale(0.93); background: var(--surface3); }
+
+  .pin-error { color: var(--danger); font-size: 12px; margin-bottom: 8px; }
+
+  /* TOAST */
+  .notif-toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 11px 18px;
+    font-size: 13px; z-index: 2000;
+    white-space: nowrap;
+    animation: slideUp 0.3s ease;
+    max-width: 90vw;
+  }
+
+  @keyframes slideUp {
+    from { opacity:0; transform: translateX(-50%) translateY(14px); }
+    to { opacity:1; transform: translateX(-50%) translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+// ── STATE (persisted to localStorage) ──────────────────────────────────────
+const DEFAULT_APPS = [
+  { id:'fb',  name:'Facebook',   icon:'📘', color:'#1877f2', bg:'rgba(24,119,242,0.15)',  used:87,  limit:60  },
+  { id:'ig',  name:'Instagram',  icon:'📸', color:'#e1306c', bg:'rgba(225,48,108,0.15)',  used:45,  limit:45  },
+  { id:'tw',  name:'X (Twitter)',icon:'🐦', color:'#1da1f2', bg:'rgba(29,161,242,0.15)',  used:22,  limit:30  },
+  { id:'tt',  name:'TikTok',     icon:'🎵', color:'#ff0050', bg:'rgba(255,0,80,0.15)',    used:110, limit:30  },
+  { id:'yt',  name:'YouTube',    icon:'📺', color:'#ff0000', bg:'rgba(255,0,0,0.15)',     used:18,  limit:60  },
+  { id:'sc',  name:'Snapchat',   icon:'👻', color:'#fffc00', bg:'rgba(255,252,0,0.15)',   used:8,   limit:20  },
+];
+
+const WEEKDATA = [62,78,45,90,55,103,72];
+const DAYS = ['M','T','W','T','F','S','S'];
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('focuslock_state');
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  return {
+    activeTab: 0,
+    locked: { fb:true, tt:true },
+    blockEnabled: true,
+    notifEnabled: true,
+    hardMode: false,
+    breathEnabled: true,
+    wellbeingEnabled: true,
+    streak: 3,
+    limits: Object.fromEntries(DEFAULT_APPS.map(a=>[a.id, a.limit])),
+    pin: '1234',
+  };
+}
+
+function saveState() {
+  try { localStorage.setItem('focuslock_state', JSON.stringify(st)); } catch(e) {}
+}
+
+let st = loadState();
+let ui = {
+  showLockScreen: null,
+  showPinUnlock: null,
+  pinInput: '',
+  pinError: false,
+  toast: null,
+  installPrompt: null,
+  showInstallBanner: true,
+};
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function pct(used, limit) { return Math.min(100, Math.round(used/limit*100)); }
+
+function fmtMin(m) {
+  if (m < 60) return m + 'm';
+  return Math.floor(m/60) + 'h ' + (m%60) + 'm';
+}
+
+function progressColor(p) {
+  if (p >= 100) return '#ff4757';
+  if (p >= 75)  return '#ffa94d';
+  return '#43e97b';
+}
+
+function showToast(msg) {
+  ui.toast = msg;
+  render();
+  setTimeout(() => { ui.toast = null; render(); }, 2600);
+}
+
+// ── RENDERERS ──────────────────────────────────────────────────────────────
+function renderInstallBanner() {
+  if (!ui.showInstallBanner) return '';
+  return `
+  <div class="install-banner" id="install-banner">
+    <span>📲</span>
+    <span style="font-size:12px;color:var(--text)">Add FocusLock to home screen</span>
+    <button class="install-btn" onclick="triggerInstall()">Install</button>
+    <button class="install-close" onclick="hideBanner()">×</button>
+  </div>`;
+}
+
+function renderDashboard() {
+  const apps = DEFAULT_APPS;
+  const totalUsed = apps.reduce((s,a) => s + a.used, 0);
+  const totalLimit = apps.reduce((s,a) => s + st.limits[a.id], 0);
+  const overLimit = apps.filter(a => a.used >= st.limits[a.id]);
+  const p = pct(totalUsed, totalLimit);
+  const fill = progressColor(p);
+  const circ = 2*Math.PI*30;
+  const dash = circ*(p/100);
+  const maxW = Math.max(...WEEKDATA);
+
+  return `
+  <div class="daily-card">
+    <div class="ring-row">
+      <div class="ring-wrap">
+        <svg width="68" height="68" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="6"/>
+          <circle cx="36" cy="36" r="30" fill="none" stroke="${fill}" stroke-width="6"
+            stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round"/>
+        </svg>
+        <div class="ring-label">${p}<small>%</small></div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Total today</div>
+        <div class="daily-time">${Math.floor(totalUsed/60)}<span>h </span>${totalUsed%60}<span>m</span></div>
+        <div class="daily-meta">Limit: <strong>${fmtMin(totalLimit)}</strong> · ${overLimit.length} blocked</div>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:7px">
+        <span style="font-size:11px;color:var(--muted)">This week</span>
+        <span style="font-size:11px;color:var(--muted)">avg ${Math.round(WEEKDATA.reduce((s,v)=>s+v,0)/7)}m/day</span>
+      </div>
+      <div class="chart-row">
+        ${WEEKDATA.map((v,i) => {
+          const h = Math.max(3, Math.round((v/maxW)*60));
+          const today = i===6;
+          return `<div class="bar-wrap">
+            <div class="bar" style="height:${h}px;background:${today?'var(--accent)':'rgba(255,255,255,0.11)'}"></div>
+            <div class="bar-day" style="color:${today?'var(--accent)':'var(--muted)'}">${DAYS[i]}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>
+
+  <div class="insight-card">
+    <div class="insight-icon">💡</div>
+    <div class="insight-text">
+      <strong>Insight:</strong> TikTok is your biggest time sink today — 80m over limit. You've saved <strong>~2.4h</strong> this week vs last week.
+    </div>
+  </div>
+
+  <p class="section-title">Apps</p>
+  ${apps.map(a => {
+    const p2 = pct(a.used, st.limits[a.id]);
+    const fc = progressColor(p2);
+    const isLocked = st.locked[a.id];
+    return `
+    <div class="app-card${isLocked?' locked':''}">
+      <div class="app-header">
+        <div class="app-icon" style="background:${a.bg}">${a.icon}</div>
+        <div class="app-info">
+          <div class="app-name">${a.name}${isLocked?'<span class="lock-pill">LOCKED</span>':''}</div>
+          <div class="app-sub">Limit: ${fmtMin(st.limits[a.id])}/day</div>
+        </div>
+        <div>
+          <div class="app-time">${fmtMin(a.used)}</div>
+          <div class="app-time limit">${p2}% used</div>
+        </div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${p2}%;background:${fc}"></div>
+      </div>
+      <div class="status-row">
+        <span class="status-tag ${p2>=100?'tag-locked':p2>=75?'tag-warn':'tag-ok'}">
+          ${p2>=100?'🔒 Blocked':p2>=75?'⚠ Near limit':'✓ On track'}
+        </span>
+        ${isLocked
+          ? `<button class="btn btn-danger" onclick="tryUnlock('${a.id}')" style="padding:5px 10px;font-size:11px">Unlock</button>`
+          : `<button class="btn" onclick="setTab(2)" style="padding:5px 10px;font-size:11px">Limit</button>`
+        }
+      </div>
+    </div>`;
+  }).join('')}`;
+}
+
+function renderStats() {
+  return `
+  <p class="section-title">Your stats</p>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--success)">2h 27m</div>
+      <div class="stat-label">Saved this week</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--accent)">${st.streak}</div>
+      <div class="stat-label">🔥 Day streak</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">72m</div>
+      <div class="stat-label">Avg daily usage</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--amber)">7</div>
+      <div class="stat-label">Best streak ever</div>
+    </div>
+  </div>
+
+  <p class="section-title">Weekly breakdown</p>
+  ${DEFAULT_APPS.map(a => `
+  <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+    <div style="font-size:18px;width:26px;text-align:center">${a.icon}</div>
+    <span style="flex:1;font-size:13px">${a.name}</span>
+    <div class="progress-track" style="width:72px;height:3px">
+      <div class="progress-fill" style="width:${pct(a.used,st.limits[a.id])}%;background:${progressColor(pct(a.used,st.limits[a.id]))}"></div>
+    </div>
+    <span style="font-size:12px;font-family:'DM Mono',monospace;color:var(--muted);min-width:36px;text-align:right">${fmtMin(a.used)}</span>
+  </div>`).join('')}
+
+  <div style="margin-top:18px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Blocked attempts today</div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      ${DEFAULT_APPS.slice(0,5).map(a=>`
+        <div style="text-align:center">
+          <div style="font-size:18px">${a.icon}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">${Math.floor(Math.random()*8)}</div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderSettings() {
+  return `
+  <p class="section-title">Blocker</p>
+  ${toggle('Block at limit','Hard block when daily limit hit','blockEnabled')}
+  ${toggle('Hard Mode','No bypass — PIN won\'t work either','hardMode','danger')}
+  ${toggle('Notifications','Alerts at 75% & 100% of limit','notifEnabled')}
+
+  <p class="section-title" style="margin-top:14px">Wellbeing</p>
+  ${toggle('Breathing prompt','Show 4-7-8 breathing when blocked','breathEnabled')}
+  ${toggle('Usage insights','Weekly screen time reports','wellbeingEnabled')}
+
+  <p class="section-title" style="margin-top:14px">Daily Limits</p>
+  ${DEFAULT_APPS.map(a=>`
+  <div class="setting-row">
+    <div style="font-size:20px">${a.icon}</div>
+    <div class="setting-info">
+      <div class="setting-label">${a.name}</div>
+      <div class="setting-desc">${fmtMin(st.limits[a.id])}/day</div>
+    </div>
+    <div class="limit-editor">
+      <button class="btn" onclick="adjustLimit('${a.id}',-5)" style="padding:4px 8px">−</button>
+      <input class="limit-input" type="number" value="${st.limits[a.id]}"
+        onchange="setLimit('${a.id}',this.value)" min="5" max="300" id="li_${a.id}">
+      <button class="btn" onclick="adjustLimit('${a.id}',5)" style="padding:4px 8px">+</button>
+    </div>
+  </div>`).join('')}
+
+  <p class="section-title" style="margin-top:14px">Security</p>
+  <div class="setting-row">
+    <div class="setting-info">
+      <div class="setting-label">PIN Code</div>
+      <div class="setting-desc">Current PIN: ••••</div>
+    </div>
+    <button class="btn" onclick="showToastMsg('PIN change coming soon')">Change</button>
+  </div>
+
+  <div style="margin-top:14px">
+    <button class="btn btn-danger btn-full" onclick="resetAll()">Reset all data</button>
+  </div>`;
+}
+
+function toggle(label, desc, key, variant) {
+  return `
+  <div class="setting-row">
+    <div class="setting-info">
+      <div class="setting-label" style="color:${variant==='danger'?'var(--danger)':'var(--text)'}">${label}</div>
+      <div class="setting-desc">${desc}</div>
+    </div>
+    <label class="toggle-wrap">
+      <input type="checkbox" ${st[key]?'checked':''} onchange="toggleSetting('${key}',this.checked)">
+      <div class="toggle-track"></div>
+      <div class="toggle-thumb"></div>
+    </label>
+  </div>`;
+}
+
+function renderLockScreen() {
+  const a = DEFAULT_APPS.find(x => x.id === ui.showLockScreen);
+  if (!a) return '';
+  return `
+  <div class="modal-overlay">
+    <div class="modal">
+      <div class="lock-icon">🔒</div>
+      <h2>App Locked</h2>
+      <p>${a.icon} <strong>${a.name}</strong> is blocked.<br>
+      Used <strong>${fmtMin(a.used)}</strong> — ${fmtMin(a.used - st.limits[a.id])} over your ${fmtMin(st.limits[a.id])} limit.</p>
+      ${st.breathEnabled ? `
+      <div class="breath-card">
+        <div class="breath-title">TRY THIS INSTEAD</div>
+        <div class="breath-text">Take a 4-7-8 breath.<br>Inhale 4s → hold 7s → exhale 8s 🌬️</div>
+      </div>` : ''}
+      ${!st.hardMode ? `
+      <div class="emergency-note">⚡ Emergency unlock resets your streak.</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-full" onclick="closeModal()" style="flex:1">← Back</button>
+        <button class="btn btn-accent btn-full" onclick="showPinScreen('${a.id}')" style="flex:1">Unlock</button>
+      </div>` : `
+      <button class="btn btn-full" onclick="closeModal()">← Back</button>`}
+    </div>
+  </div>`;
+}
+
+function renderPinScreen() {
+  const digits = ui.pinInput.split('');
+  const keys = ['1','2','3','4','5','6','7','8','9','⌫','0','✓'];
+  return `
+  <div class="modal-overlay">
+    <div class="modal">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Enter 4-digit PIN to unlock</div>
+      <div class="pin-row">
+        ${[0,1,2,3].map(i=>`
+          <div class="pin-dot${i<digits.length?' filled':''}">${i<digits.length?'•':''}</div>`).join('')}
+      </div>
+      ${ui.pinError?`<div class="pin-error">Wrong PIN. Try again.</div>`:''}
+      <div class="pin-pad">
+        ${keys.map(k=>`<button class="pin-key" onclick="handlePin('${k}')">${k}</button>`).join('')}
+      </div>
+      <button class="btn" onclick="closeModal()" style="width:100%;margin-top:6px">Cancel</button>
+    </div>
+  </div>`;
+}
+
+// ── MAIN RENDER ────────────────────────────────────────────────────────────
+function render() {
+  const tabs = ['Dashboard','Stats','Settings'];
+  const pages = [renderDashboard, renderStats, renderSettings];
+
+  document.getElementById('app').innerHTML = `
+  ${renderInstallBanner()}
+  <div class="topbar">
+    <div class="logo"><div class="logo-dot">🛡</div>FocusLock</div>
+    <div class="streak-badge">🔥 ${st.streak} day streak</div>
+  </div>
+  <div class="tabs">
+    ${tabs.map((t,i)=>`<button class="tab${st.activeTab===i?' active':''}" onclick="setTab(${i})">${t}</button>`).join('')}
+  </div>
+  <div class="content">${pages[st.activeTab]()}</div>
+  ${ui.showLockScreen ? renderLockScreen() : ''}
+  ${ui.showPinUnlock ? renderPinScreen() : ''}
+  ${ui.toast ? `<div class="notif-toast">${ui.toast}</div>` : ''}`;
+}
+
+// ── ACTIONS ────────────────────────────────────────────────────────────────
+window.setTab = i => { st.activeTab = i; saveState(); render(); };
+window.tryUnlock = id => { ui.showLockScreen = id; ui.showPinUnlock = null; render(); };
+window.showPinScreen = id => { ui.showLockScreen = null; ui.showPinUnlock = id; ui.pinInput = ''; ui.pinError = false; render(); };
+window.closeModal = () => { ui.showLockScreen = null; ui.showPinUnlock = null; ui.pinInput = ''; ui.pinError = false; render(); };
+
+window.handlePin = k => {
+  if (k === '⌫') { ui.pinInput = ui.pinInput.slice(0,-1); ui.pinError = false; }
+  else if (k === '✓') {
+    if (ui.pinInput === st.pin) {
+      const id = ui.showPinUnlock;
+      st.locked[id] = false;
+      st.streak = Math.max(0, st.streak - 1);
+      ui.showPinUnlock = null; ui.pinInput = '';
+      saveState();
+      showToast('⚠ Unlocked — streak −1');
+    } else { ui.pinError = true; ui.pinInput = ''; }
+  } else {
+    if (ui.pinInput.length < 4) {
+      ui.pinInput += k; ui.pinError = false;
+      if (ui.pinInput.length === 4) setTimeout(() => window.handlePin('✓'), 180);
+    }
+  }
+  render();
+};
+
+window.toggleSetting = (key, val) => {
+  st[key] = val; saveState();
+  showToast(val ? `✓ ${key} on` : `✗ ${key} off`);
+};
+
+window.adjustLimit = (id, delta) => {
+  st.limits[id] = Math.max(5, Math.min(300, st.limits[id] + delta));
+  saveState(); render();
+};
+
+window.setLimit = (id, val) => {
+  st.limits[id] = Math.max(5, Math.min(300, parseInt(val) || 30));
+  saveState(); render();
+};
+
+window.resetAll = () => {
+  st = { activeTab:0, locked:{fb:true,tt:true}, blockEnabled:true, notifEnabled:true, hardMode:false, breathEnabled:true, wellbeingEnabled:true, streak:0, limits:Object.fromEntries(DEFAULT_APPS.map(a=>[a.id,a.limit])), pin:'1234' };
+  saveState(); showToast('🗑 Data cleared');
+};
+
+window.showToastMsg = msg => showToast(msg);
+
+window.hideBanner = () => { ui.showInstallBanner = false; render(); };
+
+window.triggerInstall = () => {
+  if (ui.installPrompt) {
+    ui.installPrompt.prompt();
+    ui.installPrompt.userChoice.then(r => {
+      if (r.outcome === 'accepted') showToast('✓ FocusLock installed!');
+      ui.installPrompt = null;
+      ui.showInstallBanner = false;
+    });
+  } else {
+    showToast('📱 Tap browser menu → "Add to Home Screen"');
+  }
+  render();
+};
+
+// ── PWA INSTALL ────────────────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  ui.installPrompt = e;
+  render();
+});
+
+window.addEventListener('appinstalled', () => {
+  ui.showInstallBanner = false;
+  showToast('✓ FocusLock added to home screen!');
+});
+
+// ── SERVICE WORKER ─────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+render();
+</script>
+</body>
+</html>
